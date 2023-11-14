@@ -1,12 +1,14 @@
 const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 
 module.exports = {
   entry: "./src/index.tsx",
   output: {
     path: path.resolve(__dirname, "dist"),
     publicPath: "/",
-    filename: "bundle.js", // Make sure this matches your <script> tag's src in index.html
+    filename: "app.js", // Output file for JavaScript
   },
   devServer: {
     static: {
@@ -14,21 +16,42 @@ module.exports = {
     },
     historyApiFallback: true,
   },
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        extractComments: false, // This will prevent the creation of the LICENSE.txt file
+      }),
+    ],
+  },
   module: {
     rules: [
       {
         test: /\.(ts|tsx)$/,
-        use: ["ts-loader"],
-        exclude: /node_modules/,
+        use: [
+          {
+            loader: "babel-loader", // Use Babel loader
+            options: {
+              presets: [
+                "@babel/preset-env", // Preset to compile your JavaScript to ES5
+                "@babel/preset-react", // Preset to compile React JSX to JavaScript
+                "@babel/preset-typescript", // Preset to compile TypeScript
+              ],
+            },
+          },
+        ],
+        exclude: [/node_modules/, /\.test\.tsx?$/, /\.spec\.tsx?$/],
       },
       {
         test: /\.(sa|sc|c)ss$/, // styles files
-        use: ["style-loader", "css-loader"],
+        use: [MiniCssExtractPlugin.loader, "css-loader"], // Extract styles to a separate file
       },
       {
-        test: /\.(png|woff|woff2|eot|ttf|svg)$/, // to import images and fonts
-        loader: "url-loader",
-        options: { limit: false },
+        test: /\.svg$/,
+        type: "asset/resource",
+        generator: {
+          filename: "logo.svg", // This will output your SVG as "logo.svg"
+        },
       },
     ],
   },
@@ -37,6 +60,9 @@ module.exports = {
       template: path.join(__dirname, "src", "index.html"),
       filename: "index.html",
       inject: "body", // This will inject your bundle at the bottom of the body tag
+    }),
+    new MiniCssExtractPlugin({
+      filename: "styles.css", // Output file for styles
     }),
   ],
   resolve: {
@@ -49,6 +75,7 @@ module.exports = {
       ".css",
       ".scss",
       ".png",
+      ".svg",
     ],
     modules: ["src", "node_modules"], // Assuming that your files are inside the src dir
   },

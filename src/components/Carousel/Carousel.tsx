@@ -1,30 +1,36 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled, { css } from "styled-components";
+import Skeleton from "./Skeleton";
 
 interface CarouselProps {
   images: string[];
   onSelect: (selectedIndex: number) => void; // callback function
+  isLoading: boolean;
 }
 
 interface CarouselItemProps extends React.ImgHTMLAttributes<HTMLImageElement> {
-  isSelected: boolean;
+  isselected: boolean;
 }
 
 const CarouselContainer = styled.div`
   display: flex;
-  overflow-x: auto;
+  overflow-x: hidden;
   scroll-behavior: smooth;
 `;
 
-const CarouselItem = styled.img<CarouselItemProps>`
+const CarouselItem = styled(
+  React.forwardRef<HTMLImageElement, CarouselItemProps>(
+    ({ isselected, ...props }, ref) => <img ref={ref} {...props} />
+  )
+)`
   flex: 0 0 auto; // Ensure items don't stretch
   width: 100%;
   max-width: 300px;
   transition: transform 0.5s ease, box-shadow 0.5s ease;
   margin: 0 10px;
 
-  ${({ isSelected }) =>
-    isSelected &&
+  ${({ isselected }) =>
+    isselected &&
     css`
       transform: scale(1.05);
       box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
@@ -41,15 +47,10 @@ const CarouselItem = styled.img<CarouselItemProps>`
   }
 `;
 
-const Carousel = ({ images, onSelect }: CarouselProps) => {
+const Carousel = ({ images, onSelect, isLoading }: CarouselProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLImageElement | null)[]>([]);
-
-  const handleSelect = (index: number) => {
-    onSelect(index); // Call the passed onSelect function with the selected index
-    setCurrentIndex(index); // Optionally set the current index if needed
-  };
 
   useEffect(() => {
     itemRefs.current = itemRefs.current.slice(0, images.length);
@@ -90,15 +91,20 @@ const Carousel = ({ images, onSelect }: CarouselProps) => {
 
   return (
     <CarouselContainer ref={containerRef}>
-      {images.map((image, index) => (
-        <CarouselItem
-          key={index}
-          src={image}
-          alt={`Carousel item ${index}`}
-          isSelected={index === currentIndex}
-          ref={(el) => (itemRefs.current[index] = el)}
-        />
-      ))}
+      {isLoading ? (
+        <Skeleton />
+      ) : (
+        images.map((image, index) => (
+          // ... your CarouselItem components
+          <CarouselItem
+            key={index}
+            src={image}
+            alt={`Carousel item ${index}`}
+            isselected={index === currentIndex}
+            ref={(el) => (itemRefs.current[index] = el)}
+          />
+        ))
+      )}
     </CarouselContainer>
   );
 };

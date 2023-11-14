@@ -1,57 +1,84 @@
-import React, { createContext, ReactNode, useContext, useState } from "react";
-import useFetchPrograms, {
-  ProgramDataType,
-  Program,
-} from "../hooks/useFetchPrograms";
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
+import useFetchPrograms, { ProgramDataType } from "../hooks/useFetchPrograms";
+import { Program } from "../types/Program";
 
 export type ProgramContextType = {
   programData: ProgramDataType;
   selectedProgram: Program | null;
-  setSelectedProgram: (program: Program | null) => void; // Add a function type for updating the selected program
+  hasError: boolean;
+  setSelectedProgram: (id: number) => void; // Change the function type to accept an ID
 };
 
 const emptyProgamContext: ProgramContextType = {
   programData: {
-    status: "idle",
+    status: "fetching",
     data: [],
-    errorMessage: "",
   },
+  hasError: false,
   selectedProgram: null,
-  setSelectedProgram: () => {}, // Initialize the function with an empty function for now
+  setSelectedProgram: () => {}, // This is fine as it's just an initial value
 };
 
-// Initialize the context with undefined for now since we will be populating it with actual values below.
 export const ProgramContext =
   createContext<ProgramContextType>(emptyProgamContext);
 
 const ProgramProvider = ({ children }: { children: ReactNode }) => {
   const programData = useFetchPrograms();
-  const [selectedProgram, setSelectedProgram] = useState<Program | null>(null); // State to hold the selected program
+  const [selectedProgram, setSelectedProgram] = useState<Program | null>(null);
+  const [hasError, setHasError] = useState<boolean>(false);
 
-  // A function to update the selected program
-  const handleSetSelectedProgram = (program: Program | null) => {
-    setSelectedProgram(program);
-  };
+  useEffect(() => {
+    if (programData.status === "error") {
+      setHasError(true);
+    }
+  }, [programData.status]);
+
+  // The type of 'id' is number, to match the new type in ProgramContextType
+  // Also memoize the function to improve performance
+  const handleSetSelectedProgram = useCallback(
+    (id: number) => {
+      const program =
+        programData.data.find((program) => program.id === id) || null;
+      if (programData.data.length > 0 && !program) {
+        setHasError(true);
+      }
+      setSelectedProgram(program);
+    },
+    [programData.data]
+  );
+
+  // Memoizing the provider value to improve performance
+  const providerValue = useMemo(
+    () => ({
+      programData,
+      hasError,
+      selectedProgram,
+      setSelectedProgram: handleSetSelectedProgram,
+    }),
+    [programData, hasError, selectedProgram, handleSetSelectedProgram]
+  );
 
   return (
-    <ProgramContext.Provider
-      value={{
-        programData,
-        selectedProgram,
-        setSelectedProgram: handleSetSelectedProgram, // Pass the function down through the context
-      }}
-    >
+    <ProgramContext.Provider value={providerValue}>
       {children}
     </ProgramContext.Provider>
   );
 };
 
-// Custom hook to use the program context
 export const useProgramContext = () => {
   const ctx = useContext(ProgramContext);
 
-  if (!ctx)
+  if (!ctx) {
     throw new Error("useProgramContext must be used within a ProgramProvider");
+  }
 
   return ctx;
 };

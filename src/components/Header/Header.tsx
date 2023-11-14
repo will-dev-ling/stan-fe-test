@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import StanLogo from "./stanlogo.png";
+import StanLogo from "./logo.svg";
 
 // Styled components
 const HeaderContainer = styled.header`
@@ -53,13 +53,13 @@ const Header = () => {
         <BrandTitle src={StanLogo} alt="Stan Logo" />
         <NavbarLinks>
           <NavbarLink>
-            <a href="#">Home</a>
+            <a href="/">Home</a>
           </NavbarLink>
           <NavbarLink>
-            <a href="#">TV Shows</a>
+            <a href="/">TV Shows</a>
           </NavbarLink>
           <NavbarLink>
-            <a href="#">Movies</a>
+            <a href="/">Movies</a>
           </NavbarLink>
         </NavbarLinks>
       </Navbar>

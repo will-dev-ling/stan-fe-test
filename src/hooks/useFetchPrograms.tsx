@@ -1,23 +1,11 @@
 import { useState, useEffect, useRef } from "react";
+import { Program } from "../types/Program";
 
-type Status = "idle" | "fetching" | "fetched" | "error";
-
-export type Program = {
-  id: number;
-  title: string;
-  description: string;
-  type: string;
-  image: string;
-  rating: string;
-  genre: string;
-  year: number;
-  language: string;
-};
+type Status = "fetching" | "fetched" | "error";
 
 export type ProgramDataType = {
   status: Status;
   data: Program[];
-  errorMessage: string;
 };
 
 const useFetchPrograms = (): ProgramDataType => {
@@ -25,39 +13,36 @@ const useFetchPrograms = (): ProgramDataType => {
   const cache = useRef<any>({
     data: [],
   });
-  const [status, setStatus] = useState<Status>("idle");
+  const [status, setStatus] = useState<Status>("fetching");
   const [data, setData] = useState<Program[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string>("");
-
-  console.log("data", data);
 
   useEffect(() => {
     const fetchData = async () => {
-      setStatus("fetching");
-
-      try {
-        if (cache.current["data"].length > 0) {
-          const data = cache.current["data"];
-          setData(data);
-          setStatus("fetched");
-          return;
-        } else {
-          const response = await fetch("/data.json");
-          const data = await response.json();
-          cache.current["data"] = data;
-          setData(data);
-          setStatus("fetched");
+      // Wrapping in a setTimeout of 1.5 seconds to show the skeleton UI Loader
+      setTimeout(async () => {
+        try {
+          if (cache.current["data"].length > 0) {
+            const data = cache.current["data"];
+            setData(data);
+            setStatus("fetched");
+            return;
+          } else {
+            const response = await fetch("data.json");
+            const data = await response.json();
+            cache.current["data"] = data;
+            setData(data);
+            setStatus("fetched");
+          }
+        } catch (error) {
+          setStatus("error");
         }
-      } catch (error) {
-        console.log("error", error);
-        setStatus("error");
-      }
+      }, 1000);
     };
 
     fetchData();
   }, []);
 
-  return { status, data, errorMessage };
+  return { status, data };
 };
 
 export default useFetchPrograms;

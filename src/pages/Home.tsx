@@ -1,26 +1,28 @@
-import React, { useState } from "react";
+import React, { useCallback } from "react";
 import Carousel from "../components/Carousel";
 import { useProgramContext } from "../contexts/ProgramContext";
-import { Program } from "../hooks/useFetchPrograms";
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
   const { programData, setSelectedProgram } = useProgramContext();
+  const navigate = useNavigate();
 
-  const handleSelectProgram = (selectedIndex: number) => {
-    // Assuming programData.data is an array and has a matching structure
-    setSelectedProgram(programData.data[selectedIndex]);
-    // Now selectedProgram holds the selected program's data
-    // You can do other actions here if needed
-  };
+  // Memoizing function to improve performance
+  const handleSelectProgram = useCallback(
+    (selectedIndex: number) => {
+      const programId = programData.data[selectedIndex].id;
+      setSelectedProgram(programId);
+      navigate(`/program/${programId}`);
+    },
+    [programData.data]
+  );
 
   return (
-    <div>
-      <Carousel
-        images={programData.data.map((program) => program.image)}
-        onSelect={handleSelectProgram} // Pass the onSelect function
-      />
-      {/* You can now use selectedProgram here to display more information or perform actions */}
-    </div>
+    <Carousel
+      images={programData.data.map((program) => program.image)}
+      onSelect={handleSelectProgram} // Pass the onSelect function
+      isLoading={programData.status === "fetching"}
+    />
   );
 };
 
